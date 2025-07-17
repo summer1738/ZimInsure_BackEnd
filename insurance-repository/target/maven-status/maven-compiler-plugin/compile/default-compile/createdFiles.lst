@@ -1,0 +1,6 @@
+com/ziminsure/insurance/repository/NotificationRepository.class
+com/ziminsure/insurance/repository/UserRepository.class
+com/ziminsure/insurance/repository/QuotationRepository.class
+com/ziminsure/insurance/repository/PolicyRepository.class
+com/ziminsure/insurance/repository/CarRepository.class
+com/ziminsure/insurance/repository/InsuranceTermRepository.class

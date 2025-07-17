@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="insurance-service" />
+        <module name="insurance-api" />
+        <module name="insurance-service-impl" />
+        <module name="insurance-domain" />
+        <module name="insurance-repository" />
+      </profile>
+    </annotationProcessing>
+  </component>
+</project>

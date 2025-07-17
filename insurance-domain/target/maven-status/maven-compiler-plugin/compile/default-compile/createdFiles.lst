@@ -1,0 +1,9 @@
+com/ziminsure/insurance/domain/Policy.class
+com/ziminsure/insurance/domain/InsuranceTerm.class
+com/ziminsure/insurance/domain/User.class
+com/ziminsure/insurance/domain/Notification$NotificationBuilder.class
+com/ziminsure/insurance/domain/PolicyResponse.class
+com/ziminsure/insurance/domain/Car.class
+com/ziminsure/insurance/domain/Notification.class
+com/ziminsure/insurance/domain/Quotation.class
+com/ziminsure/insurance/domain/User$Role.class
