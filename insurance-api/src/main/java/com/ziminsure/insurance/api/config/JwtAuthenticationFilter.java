@@ -19,9 +19,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     private final UserService userService;
     private final JwtUtil jwtUtil;
 
@@ -34,26 +37,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        logger.info("JwtAuthenticationFilter invoked for URI: {}", request.getRequestURI());
         final String authHeader = request.getHeader("Authorization");
         String username = null;
         String jwt = null;
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             jwt = authHeader.substring(7);
-            username = jwtUtil.extractUsername(jwt);
+            try {
+                username = jwtUtil.extractUsername(jwt);
+            } catch (Exception e) {
+                logger.error("Failed to extract username from JWT: {}", e.getMessage());
+            }
+        } else if (authHeader != null) {
+            logger.warn("Authorization header does not start with Bearer: {}", authHeader);
+        } else {
+            logger.debug("No Authorization header present");
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             Optional<User> userOpt = userService.findByEmail(username);
-            if (userOpt.isPresent() && jwtUtil.validateToken(jwt, username)) {
-                User user = userOpt.get();
-                // Extract role from JWT and set authorities
-                String role = jwtUtil.extractRole(jwt);
-                List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        user, null, authorities);
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            if (userOpt.isPresent()) {
+                if (jwtUtil.validateToken(jwt, username)) {
+                    User user = userOpt.get();
+                    String role = jwtUtil.extractRole(jwt);
+                    List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            user, null, authorities);
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    logger.info("JWT authentication successful for user: {} with role: {}", username, role);
+                } else {
+                    logger.warn("JWT validation failed for user: {}", username);
+                }
+            } else {
+                logger.warn("User not found for username extracted from JWT: {}", username);
             }
         }
         filterChain.doFilter(request, response);

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/cars")
@@ -24,12 +25,8 @@ public class CarController {
     // List cars for current client
     @GetMapping
     @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<List<Car>> listCars(@RequestParam(name = "clientId", required = false) Long clientId, Principal principal) {
-        Optional<User> userOpt = userService.findByEmail(principal.getName());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).body(null);
-        }
-        User user = userOpt.get();
+    public ResponseEntity<List<Car>> listCars(@RequestParam(name = "clientId", required = false) Long clientId, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
         if (user.getRole() == User.Role.SUPER_ADMIN) {
             return ResponseEntity.ok(carRepository.findAll());
         } else if (user.getRole() == User.Role.CLIENT) {

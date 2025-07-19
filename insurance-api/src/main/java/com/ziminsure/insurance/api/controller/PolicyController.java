@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/policies")
@@ -29,12 +30,8 @@ public class PolicyController {
     // List policies
     @GetMapping
     @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<List<PolicyResponse>> listPolicies(@RequestParam(name = "clientId", required = false) Long clientId, @RequestParam(name = "carId", required = false) Long carId, Principal principal) {
-        Optional<User> userOpt = userService.findByEmail(principal.getName());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).body(null);
-        }
-        User user = userOpt.get();
+    public ResponseEntity<List<PolicyResponse>> listPolicies(@RequestParam(name = "clientId", required = false) Long clientId, @RequestParam(name = "carId", required = false) Long carId, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
         List<Policy> policies;
         if (user.getRole() == User.Role.CLIENT) {
             policies = policyRepository.findByClient(user);

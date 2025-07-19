@@ -15,6 +15,7 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/quotations")
@@ -29,12 +30,8 @@ public class QuotationController {
     // List quotations
     @GetMapping
     @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<List<Quotation>> listQuotations(@RequestParam(name = "clientId", required = false) Long clientId, @RequestParam(name = "agentId", required = false) Long agentId, @RequestParam(name = "carId", required = false) Long carId, Principal principal) {
-        Optional<User> userOpt = userService.findByEmail(principal.getName());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).body(null);
-        }
-        User user = userOpt.get();
+    public ResponseEntity<List<Quotation>> listQuotations(@RequestParam(name = "clientId", required = false) Long clientId, @RequestParam(name = "agentId", required = false) Long agentId, @RequestParam(name = "carId", required = false) Long carId, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
         if (user.getRole() == User.Role.CLIENT) {
             return ResponseEntity.ok(quotationRepository.findByClient(user));
         } else if (user.getRole() == User.Role.AGENT) {
