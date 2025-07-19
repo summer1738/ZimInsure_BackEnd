@@ -48,7 +48,12 @@ public class AuthController {
         }
         User user = userOpt.get();
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
-        return ResponseEntity.ok().body(Map.of("token", token, "role", user.getRole().name()));
+        return ResponseEntity.ok().body(Map.of(
+            "token", token, 
+            "role", user.getRole().name(),
+            "username", user.getFullName(),
+            "passwordChangeRequired", user.isPasswordChangeRequired()
+        ));
     }
 
     @GetMapping("/api/test-auth")

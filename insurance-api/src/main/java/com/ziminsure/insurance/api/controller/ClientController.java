@@ -30,6 +30,8 @@ public class ClientController {
         User agent = agentOpt.get();
         client.setRole(User.Role.CLIENT);
         client.setCreatedBy(agent.getId());
+        client.setPassword("ziminsure");
+        client.setPasswordChangeRequired(true);
         User saved = userService.registerUser(client);
         return ResponseEntity.ok(saved);
     }
