@@ -20,6 +20,8 @@ public class AgentController {
     @PostMapping
     public ResponseEntity<?> createAgent(@RequestBody User agent) {
         agent.setRole(User.Role.AGENT);
+        agent.setPassword("ziminsure");
+        agent.setPasswordChangeRequired(true);
         User saved = userService.registerUser(agent);
         return ResponseEntity.ok(saved);
     }

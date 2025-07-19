@@ -48,6 +48,9 @@ public class User {
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(nullable = false)
+    private boolean passwordChangeRequired = false;
+
     // Getters and setters
     public Long getId() {
         return id;
@@ -120,5 +123,11 @@ public class User {
     }
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    public boolean isPasswordChangeRequired() {
+        return passwordChangeRequired;
+    }
+    public void setPasswordChangeRequired(boolean passwordChangeRequired) {
+        this.passwordChangeRequired = passwordChangeRequired;
     }
 } 
