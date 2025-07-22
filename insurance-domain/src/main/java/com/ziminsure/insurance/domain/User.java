@@ -1,5 +1,6 @@
 package com.ziminsure.insurance.domain;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
@@ -27,6 +28,7 @@ public class User {
     private String password;
 
     @Column(nullable = false)
+    @JsonProperty("full_name")
     private String fullName;
 
     @Column(nullable = false, unique = true)
