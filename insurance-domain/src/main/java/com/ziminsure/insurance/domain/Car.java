@@ -1,5 +1,7 @@
 package com.ziminsure.insurance.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 @Entity
@@ -17,32 +19,90 @@ public class Car {
     private String owner;
     private String status;
 
+    public enum CarType {
+        PRIVATE, COMMERCIAL
+    }
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CarType type;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id")
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+    @JsonBackReference
     private User client;
 
     // Getters and setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getRegNumber() { return regNumber; }
-    public void setRegNumber(String regNumber) { this.regNumber = regNumber; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getMake() { return make; }
-    public void setMake(String make) { this.make = make; }
+    public String getRegNumber() {
+        return regNumber;
+    }
 
-    public String getModel() { return model; }
-    public void setModel(String model) { this.model = model; }
+    public void setRegNumber(String regNumber) {
+        this.regNumber = regNumber;
+    }
 
-    public int getYear() { return year; }
-    public void setYear(int year) { this.year = year; }
+    public String getMake() {
+        return make;
+    }
 
-    public String getOwner() { return owner; }
-    public void setOwner(String owner) { this.owner = owner; }
+    public void setMake(String make) {
+        this.make = make;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public String getModel() {
+        return model;
+    }
 
-    public User getClient() { return client; }
-    public void setClient(User client) { this.client = client; }
-} 
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public int getYear() {
+        return year;
+    }
+
+    public void setYear(int year) {
+        this.year = year;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public CarType getType() {
+        return type;
+    }
+
+    public void setType(CarType type) {
+        this.type = type;
+    }
+
+    public User getClient() {
+        return client;
+    }
+
+    public void setClient(User client) {
+        this.client = client;
+    }
+}

@@ -7,6 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import com.ziminsure.insurance.api.dto.ClientWithCarsDTO;
+import com.ziminsure.insurance.domain.Car;
+import java.util.List;
 
 import java.util.Map;
 import java.util.Optional;
@@ -23,13 +26,17 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
+    public ResponseEntity<?> register(@RequestBody ClientWithCarsDTO dto) {
+        User user = dto.getClient();
+        List<Car> cars = dto.getCars();
         if (userService.findByEmail(user.getEmail()).isPresent()) {
             return ResponseEntity.badRequest().body("Email already exists");
         }
-        // Force role to CLIENT for all self-registrations, ignore any provided role
+        if (cars == null || cars.isEmpty()) {
+            return ResponseEntity.badRequest().body("At least one car is required for registration");
+        }
         user.setRole(User.Role.CLIENT);
-        User saved = userService.registerUser(user);
+        User saved = userService.registerUserWithCars(user, cars);
         return ResponseEntity.ok(saved);
     }
 

@@ -4,6 +4,7 @@ import com.ziminsure.insurance.domain.Car;
 import com.ziminsure.insurance.domain.User;
 import com.ziminsure.insurance.repository.CarRepository;
 import com.ziminsure.insurance.service.UserService;
+import com.ziminsure.insurance.service.InsuranceTermService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,12 +22,16 @@ public class CarController {
     private CarRepository carRepository;
     @Autowired
     private UserService userService;
+    @Autowired
+    private InsuranceTermService insuranceTermService;
 
     // List cars for current client
     @GetMapping
     @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'SUPER_ADMIN')")
     public ResponseEntity<List<Car>> listCars(@RequestParam(name = "clientId", required = false) Long clientId, Authentication authentication) {
         User user = (User) authentication.getPrincipal();
+        System.out.println("[DEBUG] User: " + user.getEmail() + ", Role: " + user.getRole());
+        System.out.println("[DEBUG] Authorities: " + authentication.getAuthorities());
         if (user.getRole() == User.Role.SUPER_ADMIN) {
             return ResponseEntity.ok(carRepository.findAll());
         } else if (user.getRole() == User.Role.CLIENT) {
@@ -44,26 +49,45 @@ public class CarController {
 
     // Add car
     @PostMapping
-    @PreAuthorize("hasAnyRole('CLIENT', 'AGENT')")
+    @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'SUPER_ADMIN')")
     public ResponseEntity<?> addCar(@RequestBody Car car, Principal principal) {
         Optional<User> userOpt = userService.findByEmail(principal.getName());
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(401).body("User not found or not authenticated");
         }
         User user = userOpt.get();
+        
         if (user.getRole() == User.Role.CLIENT) {
             car.setClient(user);
-        } else if (user.getRole() == User.Role.AGENT && car.getClient() != null) {
-            Optional<User> client = userService.findById(car.getClient().getId());
-            if (client.isPresent() && client.get().getCreatedBy() == user.getId()) {
-                car.setClient(client.get());
+        } else if (user.getRole() == User.Role.AGENT) {
+            if (car.getClient() != null) {
+                Optional<User> client = userService.findById(car.getClient().getId());
+                if (client.isPresent() && client.get().getCreatedBy().equals(user.getId())) {
+                    car.setClient(client.get());
+                } else {
+                    return ResponseEntity.status(403).body("Not allowed to add car for this client");
+                }
             } else {
-                return ResponseEntity.status(403).body("Not allowed to add car for this client");
+                return ResponseEntity.status(400).body("Client is required for AGENT");
+            }
+        } else if (user.getRole() == User.Role.SUPER_ADMIN) {
+            // SUPER_ADMIN can create cars without specifying a client
+            // The car will be created but won't have insurance terms until a client is assigned
+            if (car.getClient() == null) {
+                // Create car without client for now
+                car.setClient(null);
             }
         } else {
             return ResponseEntity.status(403).build();
         }
+        
         Car saved = carRepository.save(car);
+        
+        // Create default insurance term for the car only if it has a client
+        if (saved.getClient() != null) {
+            insuranceTermService.createDefaultInsuranceTerm(saved);
+        }
+        
         return ResponseEntity.ok(saved);
     }
 

@@ -1,28 +1,65 @@
 package com.ziminsure.insurance.service.impl;
 
+import com.ziminsure.insurance.domain.Car;
 import com.ziminsure.insurance.domain.User;
+import com.ziminsure.insurance.repository.CarRepository;
 import com.ziminsure.insurance.repository.UserRepository;
 import com.ziminsure.insurance.service.UserService;
+import com.ziminsure.insurance.service.InsuranceTermService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService {
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
     private final UserRepository userRepository;
+    private final CarRepository carRepository;
     private final PasswordEncoder passwordEncoder;
+    private final InsuranceTermService insuranceTermService;
 
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository userRepository, CarRepository carRepository,
+            PasswordEncoder passwordEncoder, InsuranceTermService insuranceTermService) {
         this.userRepository = userRepository;
+        this.carRepository = carRepository;
         this.passwordEncoder = passwordEncoder;
+        this.insuranceTermService = insuranceTermService;
     }
 
     @Override
     public User registerUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public User registerUserWithCars(User user, List<Car> cars) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        User savedUser = userRepository.save(user);
+        for (Car car : cars) {
+            if (carRepository.findByRegNumber(car.getRegNumber()) != null) {
+                throw new RuntimeException("Car with registration number " + car.getRegNumber() + " already exists");
+            }
+            car.setClient(savedUser);
+            Car savedCar = carRepository.save(car);
+
+            logger.info("Car saved with ID: {}, now creating default insurance term", savedCar.getId());
+
+            // Create default insurance term for the car
+            try {
+                insuranceTermService.createDefaultInsuranceTerm(savedCar);
+                logger.info("Default insurance term created successfully for car ID: {}", savedCar.getId());
+            } catch (Exception e) {
+                logger.error("Failed to create default insurance term for car ID: {}", savedCar.getId(), e);
+            }
+        }
+        return savedUser;
     }
 
     @Override
@@ -110,4 +147,24 @@ public class UserServiceImpl implements UserService {
     public Optional<User> findById(Long id) {
         return userRepository.findById(id);
     }
-} 
+
+    @Override
+    public User save(User user) {
+        return userRepository.save(user);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        userRepository.deleteById(id);
+    }
+
+    @Override
+    public String encodePassword(String rawPassword) {
+        return passwordEncoder.encode(rawPassword);
+    }
+
+    @Override
+    public Optional<User> findWithCarsByEmail(String email) {
+        return userRepository.findWithCarsByEmail(email);
+    }
+}

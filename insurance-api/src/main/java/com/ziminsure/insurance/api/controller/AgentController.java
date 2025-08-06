@@ -10,7 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/agents")
-@PreAuthorize("hasRole('SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('AGENT', 'SUPER_ADMIN')")
 public class AgentController {
     private final UserService userService;
     public AgentController(UserService userService) {

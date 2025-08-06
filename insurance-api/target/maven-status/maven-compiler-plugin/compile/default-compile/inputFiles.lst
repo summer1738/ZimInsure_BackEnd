@@ -1,12 +1,14 @@
-/home/virus/Desktop/insurance project/Backend/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/InsuranceTermController.java
-/home/virus/Desktop/insurance project/Backend/insurance-api/src/main/java/com/ziminsure/insurance/api/config/JwtUtil.java
-/home/virus/Desktop/insurance project/Backend/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/ClientController.java
-/home/virus/Desktop/insurance project/Backend/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/NotificationController.java
-/home/virus/Desktop/insurance project/Backend/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/AgentController.java
-/home/virus/Desktop/insurance project/Backend/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/AuthController.java
-/home/virus/Desktop/insurance project/Backend/insurance-api/src/main/java/com/ziminsure/insurance/api/config/JwtAuthenticationFilter.java
-/home/virus/Desktop/insurance project/Backend/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/PolicyController.java
-/home/virus/Desktop/insurance project/Backend/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/CarController.java
-/home/virus/Desktop/insurance project/Backend/insurance-api/src/main/java/com/ziminsure/insurance/api/config/SecurityConfig.java
-/home/virus/Desktop/insurance project/Backend/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/QuotationController.java
-/home/virus/Desktop/insurance project/Backend/insurance-api/src/main/java/com/ziminsure/insurance/api/ZimInsureBackendApplication.java
+/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-api/src/main/java/com/ziminsure/insurance/api/config/JwtUtil.java
+/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-api/src/main/java/com/ziminsure/insurance/api/dto/UserProfileDTO.java
+/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/PolicyController.java
+/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-api/src/main/java/com/ziminsure/insurance/api/config/SecurityConfig.java
+/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/NotificationController.java
+/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/AuthController.java
+/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-api/src/main/java/com/ziminsure/insurance/api/dto/ClientWithCarsDTO.java
+/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/AgentController.java
+/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-api/src/main/java/com/ziminsure/insurance/api/ZimInsureBackendApplication.java
+/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-api/src/main/java/com/ziminsure/insurance/api/config/JwtAuthenticationFilter.java
+/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/CarController.java
+/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/InsuranceTermController.java
+/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/ClientController.java
+/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-api/src/main/java/com/ziminsure/insurance/api/controller/QuotationController.java

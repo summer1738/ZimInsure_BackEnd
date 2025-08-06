@@ -106,7 +106,15 @@
 	</dependencies>
 
 	<build>
-		<!-- No maven-compiler-plugin config here, inherit from parent -->
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<mainClass>com.ziminsure.insurance.api.ZimInsureBackendApplication</mainClass>
+				</configuration>
+			</plugin>
+		</plugins>
 	</build>
 
 </project>
