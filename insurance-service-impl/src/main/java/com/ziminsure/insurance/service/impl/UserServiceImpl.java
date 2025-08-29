@@ -40,26 +40,49 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User registerUserWithCars(User user, List<Car> cars) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        User savedUser = userRepository.save(user);
-        for (Car car : cars) {
-            if (carRepository.findByRegNumber(car.getRegNumber()) != null) {
-                throw new RuntimeException("Car with registration number " + car.getRegNumber() + " already exists");
-            }
-            car.setClient(savedUser);
-            Car savedCar = carRepository.save(car);
+        System.out.println("=== REGISTER USER WITH CARS DEBUG ===");
+        System.out.println("User to save: " + user);
+        System.out.println("Cars to save: " + cars);
+        
+        try {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            System.out.println("Password encoded successfully");
+            
+            System.out.println("About to save user...");
+            User savedUser = userRepository.save(user);
+            System.out.println("User saved successfully with ID: " + savedUser.getId());
+            
+            for (Car car : cars) {
+                System.out.println("Processing car: " + car.getRegNumber());
+                
+                if (carRepository.findByRegNumber(car.getRegNumber()) != null) {
+                    System.out.println("ERROR: Car with registration number " + car.getRegNumber() + " already exists");
+                    throw new RuntimeException("Car with registration number " + car.getRegNumber() + " already exists");
+                }
+                
+                car.setClient(savedUser);
+                System.out.println("About to save car: " + car.getRegNumber());
+                Car savedCar = carRepository.save(car);
+                System.out.println("Car saved successfully with ID: " + savedCar.getId());
 
-            logger.info("Car saved with ID: {}, now creating default insurance term", savedCar.getId());
+                logger.info("Car saved with ID: {}, now creating default insurance term", savedCar.getId());
 
-            // Create default insurance term for the car
-            try {
-                insuranceTermService.createDefaultInsuranceTerm(savedCar);
-                logger.info("Default insurance term created successfully for car ID: {}", savedCar.getId());
-            } catch (Exception e) {
-                logger.error("Failed to create default insurance term for car ID: {}", savedCar.getId(), e);
+                // Create default insurance term for the car
+                try {
+                    insuranceTermService.createDefaultInsuranceTerm(savedCar);
+                    logger.info("Default insurance term created successfully for car ID: {}", savedCar.getId());
+                } catch (Exception e) {
+                    logger.error("Failed to create default insurance term for car ID: {}", savedCar.getId(), e);
+                }
             }
+            
+            System.out.println("All cars processed successfully");
+            return savedUser;
+        } catch (Exception e) {
+            System.out.println("ERROR in registerUserWithCars: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-        return savedUser;
     }
 
     @Override

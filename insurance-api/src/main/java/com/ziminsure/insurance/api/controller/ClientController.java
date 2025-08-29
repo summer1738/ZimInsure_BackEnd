@@ -27,26 +27,51 @@ public class ClientController {
     @PostMapping
     @PreAuthorize("hasAnyRole('AGENT', 'SUPER_ADMIN')")
     public ResponseEntity<?> createClient(@RequestBody ClientWithCarsDTO dto, Principal principal) {
+        System.out.println("=== CREATE CLIENT DEBUG ===");
+        System.out.println("Received DTO: " + dto);
+        System.out.println("Client data: " + dto.getClient());
+        System.out.println("Cars data: " + dto.getCars());
+        
         Optional<User> creatorOpt = userService.findByEmail(principal.getName());
         if (creatorOpt.isEmpty()) {
+            System.out.println("ERROR: User not found or not authenticated");
             return ResponseEntity.status(401).body("User not found or not authenticated");
         }
         User creator = creatorOpt.get();
+        System.out.println("Creator: " + creator.getEmail() + " (ID: " + creator.getId() + ")");
+        
         // Prevent CLIENT from creating another client
         if (creator.getRole() == User.Role.CLIENT) {
+            System.out.println("ERROR: Clients are not allowed to create clients");
             return ResponseEntity.status(403).body("Clients are not allowed to create clients");
         }
+        
         User client = dto.getClient();
         List<Car> cars = dto.getCars();
+        
         if (cars == null || cars.isEmpty()) {
+            System.out.println("ERROR: At least one car is required");
             return ResponseEntity.badRequest().body("At least one car is required to create a client");
         }
+        
+        System.out.println("Setting client properties...");
         client.setRole(User.Role.CLIENT);
         client.setCreatedBy(creator.getId());
         client.setPassword("ziminsure");
         client.setPasswordChangeRequired(true);
-        User saved = userService.registerUserWithCars(client, cars);
-        return ResponseEntity.ok(saved);
+        
+        System.out.println("Final client data before save: " + client);
+        System.out.println("About to call registerUserWithCars...");
+        
+        try {
+            User saved = userService.registerUserWithCars(client, cars);
+            System.out.println("SUCCESS: Client saved with ID: " + saved.getId());
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            System.out.println("ERROR: Exception during client creation: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error creating client: " + e.getMessage());
+        }
     }
 
     @GetMapping
