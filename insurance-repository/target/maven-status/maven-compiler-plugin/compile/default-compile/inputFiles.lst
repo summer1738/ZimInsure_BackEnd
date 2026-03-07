@@ -1,6 +1,6 @@
-/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-repository/src/main/java/com/ziminsure/insurance/repository/CarRepository.java
-/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-repository/src/main/java/com/ziminsure/insurance/repository/InsuranceTermRepository.java
-/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-repository/src/main/java/com/ziminsure/insurance/repository/QuotationRepository.java
-/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-repository/src/main/java/com/ziminsure/insurance/repository/UserRepository.java
-/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-repository/src/main/java/com/ziminsure/insurance/repository/PolicyRepository.java
-/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-repository/src/main/java/com/ziminsure/insurance/repository/NotificationRepository.java
+/home/tmapnigel/Documents/my_personal_projects/insurance/ZimInsure_BackEnd/insurance-repository/src/main/java/com/ziminsure/insurance/repository/InsuranceTermRepository.java
+/home/tmapnigel/Documents/my_personal_projects/insurance/ZimInsure_BackEnd/insurance-repository/src/main/java/com/ziminsure/insurance/repository/PolicyRepository.java
+/home/tmapnigel/Documents/my_personal_projects/insurance/ZimInsure_BackEnd/insurance-repository/src/main/java/com/ziminsure/insurance/repository/CarRepository.java
+/home/tmapnigel/Documents/my_personal_projects/insurance/ZimInsure_BackEnd/insurance-repository/src/main/java/com/ziminsure/insurance/repository/NotificationRepository.java
+/home/tmapnigel/Documents/my_personal_projects/insurance/ZimInsure_BackEnd/insurance-repository/src/main/java/com/ziminsure/insurance/repository/QuotationRepository.java
+/home/tmapnigel/Documents/my_personal_projects/insurance/ZimInsure_BackEnd/insurance-repository/src/main/java/com/ziminsure/insurance/repository/UserRepository.java

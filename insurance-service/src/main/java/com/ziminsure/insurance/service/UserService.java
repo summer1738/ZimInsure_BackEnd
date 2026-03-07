@@ -22,6 +22,16 @@ public interface UserService {
 
     User updateClientByAgent(Long clientId, User updatedUser, Long agentId);
 
+    /**
+     * Update client fields and sync cars: add new, update existing, remove cars not in the list.
+     */
+    User updateClientWithCars(Long clientId, User updatedUser, List<Car> cars, Long agentId);
+
+    /**
+     * Sync cars for a client (add new, update existing, remove missing). No auth check; use for SUPER_ADMIN.
+     */
+    void syncClientCars(Long clientId, List<Car> cars);
+
     void deleteClientByAgent(Long clientId, Long agentId);
 
     Optional<User> findById(Long id);
@@ -35,4 +45,6 @@ public interface UserService {
     String encodePassword(String rawPassword);
 
     Optional<User> findWithCarsByEmail(String email);
+
+    Optional<User> findWithCarsById(Long id);
 }

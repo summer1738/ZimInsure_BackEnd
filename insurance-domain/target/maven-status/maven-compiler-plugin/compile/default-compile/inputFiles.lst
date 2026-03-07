@@ -1,7 +1,7 @@
-/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-domain/src/main/java/com/ziminsure/insurance/domain/PolicyResponse.java
-/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-domain/src/main/java/com/ziminsure/insurance/domain/Policy.java
-/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-domain/src/main/java/com/ziminsure/insurance/domain/Car.java
-/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-domain/src/main/java/com/ziminsure/insurance/domain/Quotation.java
-/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-domain/src/main/java/com/ziminsure/insurance/domain/InsuranceTerm.java
-/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-domain/src/main/java/com/ziminsure/insurance/domain/Notification.java
-/home/lester/Documents/ziminsure/ZimInsure_BackEnd/insurance-domain/src/main/java/com/ziminsure/insurance/domain/User.java
+/home/tmapnigel/Documents/my_personal_projects/insurance/ZimInsure_BackEnd/insurance-domain/src/main/java/com/ziminsure/insurance/domain/User.java
+/home/tmapnigel/Documents/my_personal_projects/insurance/ZimInsure_BackEnd/insurance-domain/src/main/java/com/ziminsure/insurance/domain/PolicyResponse.java
+/home/tmapnigel/Documents/my_personal_projects/insurance/ZimInsure_BackEnd/insurance-domain/src/main/java/com/ziminsure/insurance/domain/Notification.java
+/home/tmapnigel/Documents/my_personal_projects/insurance/ZimInsure_BackEnd/insurance-domain/src/main/java/com/ziminsure/insurance/domain/Policy.java
+/home/tmapnigel/Documents/my_personal_projects/insurance/ZimInsure_BackEnd/insurance-domain/src/main/java/com/ziminsure/insurance/domain/Car.java
+/home/tmapnigel/Documents/my_personal_projects/insurance/ZimInsure_BackEnd/insurance-domain/src/main/java/com/ziminsure/insurance/domain/Quotation.java
+/home/tmapnigel/Documents/my_personal_projects/insurance/ZimInsure_BackEnd/insurance-domain/src/main/java/com/ziminsure/insurance/domain/InsuranceTerm.java

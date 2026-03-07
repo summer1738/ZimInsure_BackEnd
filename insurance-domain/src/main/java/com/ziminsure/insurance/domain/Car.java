@@ -1,5 +1,6 @@
 package com.ziminsure.insurance.domain;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
@@ -20,7 +21,16 @@ public class Car {
     private String status;
 
     public enum CarType {
-        PRIVATE, COMMERCIAL
+        PRIVATE, COMMERCIAL;
+
+        @JsonCreator
+        public static CarType fromString(String value) {
+            if (value == null) return PRIVATE;
+            return switch (value.toUpperCase()) {
+                case "COMMERCIAL" -> COMMERCIAL;
+                default -> PRIVATE;
+            };
+        }
     }
 
     @Enumerated(EnumType.STRING)

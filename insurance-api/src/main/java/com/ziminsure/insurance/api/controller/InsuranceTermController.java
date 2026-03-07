@@ -16,6 +16,8 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/insurance-terms")
@@ -86,6 +88,35 @@ public class InsuranceTermController {
                 return ResponseEntity.ok(insuranceTermRepository.findAll());
             }
         }
+    }
+
+    @GetMapping("/scan-expiring")
+    @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'SUPER_ADMIN')")
+    public ResponseEntity<List<InsuranceTerm>> scanExpiring(Principal principal) {
+        Optional<User> userOpt = userService.findByEmail(principal.getName());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(401).build();
+        }
+        User user = userOpt.get();
+        LocalDate today = LocalDate.now();
+        LocalDate windowEnd = today.plusDays(30);
+        List<InsuranceTerm> allTerms = insuranceTermRepository.findAll();
+        List<InsuranceTerm> expiring = allTerms.stream()
+            .filter(t -> t.getEndDate() != null && !t.getEndDate().isBefore(today) && !t.getEndDate().isAfter(windowEnd))
+            .toList();
+        List<InsuranceTerm> allowed;
+        if (user.getRole() == User.Role.CLIENT) {
+            List<Car> userCars = carRepository.findByClient(user);
+            Set<Long> carIds = userCars.stream().map(Car::getId).collect(Collectors.toSet());
+            allowed = expiring.stream().filter(t -> carIds.contains(t.getCar().getId())).toList();
+        } else if (user.getRole() == User.Role.AGENT) {
+            allowed = expiring.stream()
+                .filter(t -> user.getId().equals(t.getCar().getClient().getCreatedBy()))
+                .toList();
+        } else {
+            allowed = expiring;
+        }
+        return ResponseEntity.ok(allowed);
     }
 
     @GetMapping("/is-insured")

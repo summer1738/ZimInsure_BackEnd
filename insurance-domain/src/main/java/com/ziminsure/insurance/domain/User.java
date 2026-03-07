@@ -43,6 +43,9 @@ public class User {
 
     private String phone;
 
+    /** Client/agent status e.g. Active, Inactive, Pending. Used for CLIENT users in the UI. */
+    private String status;
+
     @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
     @Column(nullable = false)
     private Role role;
@@ -116,6 +119,14 @@ public class User {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public Role getRole() {

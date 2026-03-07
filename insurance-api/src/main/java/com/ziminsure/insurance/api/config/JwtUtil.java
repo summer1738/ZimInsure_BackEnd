@@ -18,7 +18,12 @@ import java.util.function.Function;
 public class JwtUtil {
     @Value("${jwt.secret}")
     private String SECRET_KEY;
-    private final long EXPIRATION = 1000 * 60 * 60 * 10; // 10 hours
+    /** Token validity in milliseconds. Default 7 days in app props. */
+    @Value("${jwt.expiration-ms:36000000}")
+    private long expirationMs;
+    /** Allowed clock skew in seconds when validating expiration. */
+    @Value("${jwt.clock-skew-seconds:60}")
+    private long clockSkewSeconds;
 
     private Key getSigningKey() {
         byte[] keyBytes = Base64.getEncoder().encode(SECRET_KEY.getBytes());
@@ -41,13 +46,17 @@ public class JwtUtil {
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
+                .setAllowedClockSkewSeconds(clockSkewSeconds)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
 
     private Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        Date expiration = extractExpiration(token);
+        long now = System.currentTimeMillis();
+        long skewMs = clockSkewSeconds * 1000L;
+        return expiration.before(new Date(now - skewMs));
     }
 
     public String generateToken(String username, String role) {
@@ -61,7 +70,7 @@ public class JwtUtil {
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

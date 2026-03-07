@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -91,6 +93,9 @@ public class UserServiceImpl implements UserService {
         user.setIdNumber(updatedUser.getIdNumber());
         user.setAddress(updatedUser.getAddress());
         user.setPhone(updatedUser.getPhone());
+        if (updatedUser.getStatus() != null) {
+            user.setStatus(updatedUser.getStatus());
+        }
         // Only update password if provided
         if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
@@ -127,10 +132,71 @@ public class UserServiceImpl implements UserService {
         user.setIdNumber(updatedUser.getIdNumber());
         user.setAddress(updatedUser.getAddress());
         user.setPhone(updatedUser.getPhone());
+        if (updatedUser.getStatus() != null) {
+            user.setStatus(updatedUser.getStatus());
+        }
         if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
         }
         return userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public User updateClientWithCars(Long clientId, User updatedUser, List<Car> cars, Long agentId) {
+        User user = updateClientByAgent(clientId, updatedUser, agentId);
+        if (cars != null) {
+            syncClientCars(clientId, cars);
+        }
+        return userRepository.findById(clientId).orElseThrow(() -> new RuntimeException("Client not found"));
+    }
+
+    @Override
+    @Transactional
+    public void syncClientCars(Long clientId, List<Car> cars) {
+        User user = userRepository.findById(clientId).orElseThrow(() -> new RuntimeException("Client not found"));
+        List<Car> existing = carRepository.findByClientId(clientId);
+        Set<Long> existingIds = existing.stream().map(Car::getId).collect(Collectors.toSet());
+        Set<Long> requestIds = cars.stream()
+                .map(Car::getId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+        for (Long id : existingIds) {
+            if (!requestIds.contains(id)) {
+                carRepository.deleteById(id);
+            }
+        }
+        for (Car car : cars) {
+            if (car.getType() == null) {
+                car.setType(Car.CarType.PRIVATE);
+            }
+            if (car.getId() == null) {
+                if (carRepository.findByRegNumber(car.getRegNumber()) != null) {
+                    throw new RuntimeException("Car with registration number " + car.getRegNumber() + " already exists");
+                }
+                car.setClient(user);
+                Car saved = carRepository.save(car);
+                try {
+                    insuranceTermService.createDefaultInsuranceTerm(saved);
+                } catch (Exception e) {
+                    logger.error("Failed to create default insurance term for car ID: {}", saved.getId(), e);
+                }
+            } else {
+                Car existingCar = carRepository.findById(car.getId()).orElse(null);
+                if (existingCar != null && existingCar.getClient() != null && existingCar.getClient().getId().equals(clientId)) {
+                    existingCar.setRegNumber(car.getRegNumber());
+                    existingCar.setMake(car.getMake());
+                    existingCar.setModel(car.getModel());
+                    existingCar.setYear(car.getYear());
+                    existingCar.setOwner(car.getOwner());
+                    existingCar.setStatus(car.getStatus());
+                    if (car.getType() != null) {
+                        existingCar.setType(car.getType());
+                    }
+                    carRepository.save(existingCar);
+                }
+            }
+        }
     }
 
     @Override
@@ -166,5 +232,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public Optional<User> findWithCarsByEmail(String email) {
         return userRepository.findWithCarsByEmail(email);
+    }
+
+    @Override
+    public Optional<User> findWithCarsById(Long id) {
+        return userRepository.findWithCarsById(id);
     }
 }
