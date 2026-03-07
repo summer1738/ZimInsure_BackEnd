@@ -1,5 +1,6 @@
 package com.ziminsure.insurance.api.controller;
 
+import com.ziminsure.insurance.api.dto.PolicyRequestDTO;
 import com.ziminsure.insurance.domain.Policy;
 import com.ziminsure.insurance.domain.Car;
 import com.ziminsure.insurance.domain.User;
@@ -12,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.security.core.Authentication;
@@ -81,16 +81,23 @@ public class PolicyController {
     // Create policy
     @PostMapping
     @PreAuthorize("hasAnyRole('AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<?> createPolicy(@RequestBody Policy policy, Principal principal) {
-        if (policy.getCar() == null || policy.getCar().getId() == null) {
+    public ResponseEntity<?> createPolicy(@RequestBody PolicyRequestDTO dto, Authentication authentication) {
+        if (dto.getCarId() == null) {
             return ResponseEntity.badRequest().body("Car is required");
         }
-        if (policy.getClient() == null || policy.getClient().getId() == null) {
+        if (dto.getClientId() == null) {
             return ResponseEntity.badRequest().body("Client is required");
         }
-        Optional<Car> car = carRepository.findById(policy.getCar().getId());
-        Optional<User> client = userService.findById(policy.getClient().getId());
+        Optional<Car> car = carRepository.findById(dto.getCarId());
+        Optional<User> client = userService.findById(dto.getClientId());
         if (car.isEmpty() || client.isEmpty()) return ResponseEntity.badRequest().body("Car or client not found");
+        Policy policy = new Policy();
+        policy.setPolicyNumber(dto.getPolicyNumber());
+        policy.setType(dto.getType());
+        policy.setStatus(dto.getStatus());
+        policy.setStartDate(dto.getStartDate());
+        policy.setEndDate(dto.getEndDate());
+        policy.setPremium(dto.getPremium());
         policy.setCar(car.get());
         policy.setClient(client.get());
         Policy saved = policyRepository.save(policy);
@@ -100,16 +107,16 @@ public class PolicyController {
     // Update policy
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<?> updatePolicy(@PathVariable("id") Long id, @RequestBody Policy policy, Principal principal) {
+    public ResponseEntity<?> updatePolicy(@PathVariable("id") Long id, @RequestBody PolicyRequestDTO dto, Authentication authentication) {
         Optional<Policy> existingOpt = policyRepository.findById(id);
         if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
         Policy existing = existingOpt.get();
-        existing.setPolicyNumber(policy.getPolicyNumber());
-        existing.setType(policy.getType());
-        existing.setStatus(policy.getStatus());
-        existing.setStartDate(policy.getStartDate());
-        existing.setEndDate(policy.getEndDate());
-        // Optionally update car/client if needed
+        if (dto.getPolicyNumber() != null) existing.setPolicyNumber(dto.getPolicyNumber());
+        if (dto.getType() != null) existing.setType(dto.getType());
+        if (dto.getStatus() != null) existing.setStatus(dto.getStatus());
+        if (dto.getStartDate() != null) existing.setStartDate(dto.getStartDate());
+        if (dto.getEndDate() != null) existing.setEndDate(dto.getEndDate());
+        if (dto.getPremium() != null) existing.setPremium(dto.getPremium());
         Policy saved = policyRepository.save(existing);
         return ResponseEntity.ok(saved);
     }
