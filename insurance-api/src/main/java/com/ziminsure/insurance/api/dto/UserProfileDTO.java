@@ -15,6 +15,14 @@ public class UserProfileDTO {
     private String status;
     private User.Role role;
     private List<Car> cars;
+    /** For CLIENT: id of the assigned agent (createdBy). */
+    private Long assignedAgentId;
+    /** For CLIENT: full name of the assigned agent. */
+    private String assignedAgentName;
+    /** For CLIENT: email of the assigned agent. */
+    private String assignedAgentEmail;
+    /** For CLIENT: phone of the assigned agent. */
+    private String assignedAgentPhone;
 
     public UserProfileDTO(Long id, String email, String fullName, String phone, String address,
                           String idNumber, String status, User.Role role, List<Car> cars) {
@@ -100,5 +108,40 @@ public class UserProfileDTO {
 
     public void setCars(List<Car> cars) {
         this.cars = cars;
+    }
+
+    public Long getAssignedAgentId() {
+        return assignedAgentId;
+    }
+
+    public void setAssignedAgentId(Long assignedAgentId) {
+        this.assignedAgentId = assignedAgentId;
+    }
+
+    @JsonProperty("assigned_agent_name")
+    public String getAssignedAgentName() {
+        return assignedAgentName;
+    }
+
+    public void setAssignedAgentName(String assignedAgentName) {
+        this.assignedAgentName = assignedAgentName;
+    }
+
+    @JsonProperty("assigned_agent_email")
+    public String getAssignedAgentEmail() {
+        return assignedAgentEmail;
+    }
+
+    public void setAssignedAgentEmail(String assignedAgentEmail) {
+        this.assignedAgentEmail = assignedAgentEmail;
+    }
+
+    @JsonProperty("assigned_agent_phone")
+    public String getAssignedAgentPhone() {
+        return assignedAgentPhone;
+    }
+
+    public void setAssignedAgentPhone(String assignedAgentPhone) {
+        this.assignedAgentPhone = assignedAgentPhone;
     }
 }

@@ -50,7 +50,17 @@ public class ClientController {
             }
         }
         client.setRole(User.Role.CLIENT);
-        client.setCreatedBy(creator.getId());
+        // When SUPER_ADMIN creates a client, they may assign to an agent via client.getCreatedBy(); otherwise use creator.
+        if (creator.getRole() == User.Role.SUPER_ADMIN && client.getCreatedBy() != null) {
+            Optional<User> agent = userService.findById(client.getCreatedBy());
+            if (agent.isPresent() && agent.get().getRole() == User.Role.AGENT) {
+                client.setCreatedBy(agent.get().getId());
+            } else {
+                client.setCreatedBy(creator.getId());
+            }
+        } else {
+            client.setCreatedBy(creator.getId());
+        }
         client.setPassword("ziminsure");
         client.setPasswordChangeRequired(true);
         User saved = userService.registerUserWithCars(client, cars);
@@ -119,6 +129,13 @@ public class ClientController {
             if (client.getPassword() != null && !client.getPassword().isEmpty()) {
                 existingClient.setPassword(userService.encodePassword(client.getPassword()));
             }
+            // Reassign to another agent if SUPER_ADMIN sends createdBy (valid agent id)
+            if (client.getCreatedBy() != null) {
+                Optional<User> agent = userService.findById(client.getCreatedBy());
+                if (agent.isPresent() && agent.get().getRole() == User.Role.AGENT) {
+                    existingClient.setCreatedBy(agent.get().getId());
+                }
+            }
             userService.save(existingClient);
             if (cars != null && !cars.isEmpty()) {
                 userService.syncClientCars(id, cars);
@@ -127,6 +144,28 @@ public class ClientController {
         } else {
             return ResponseEntity.status(403).build();
         }
+    }
+
+    /** Reassign a client to another agent or super-admin (SUPER_ADMIN only). Updates only createdBy. */
+    @PatchMapping("/{id}/assign")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> assignClientToAgent(@PathVariable("id") Long id, @RequestBody java.util.Map<String, Long> body, Authentication authentication) {
+        Long agentId = body != null ? body.get("agentId") : null;
+        if (agentId == null) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "agentId is required"));
+        }
+        User existingClient = userService.findById(id)
+                .orElseThrow(() -> new RuntimeException("Client not found"));
+        if (existingClient.getRole() != User.Role.CLIENT) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "User is not a client"));
+        }
+        Optional<User> assignable = userService.findById(agentId);
+        if (assignable.isEmpty() || (assignable.get().getRole() != User.Role.AGENT && assignable.get().getRole() != User.Role.SUPER_ADMIN)) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Invalid agent id"));
+        }
+        existingClient.setCreatedBy(assignable.get().getId());
+        userService.save(existingClient);
+        return ResponseEntity.ok(userService.findById(id).orElse(existingClient));
     }
 
     @DeleteMapping("/{id}")
@@ -179,6 +218,15 @@ public class ClientController {
                 user.getStatus(),
                 user.getRole(),
                 user.getCars());
+        // For CLIENT: include assigned agent (createdBy) so client can see their agent on dashboard
+        if (user.getRole() == User.Role.CLIENT && user.getCreatedBy() != null) {
+            userService.findById(user.getCreatedBy()).ifPresent(agent -> {
+                dto.setAssignedAgentId(agent.getId());
+                dto.setAssignedAgentName(agent.getFullName());
+                dto.setAssignedAgentEmail(agent.getEmail());
+                dto.setAssignedAgentPhone(agent.getPhone());
+            });
+        }
         return ResponseEntity.ok(dto);
     }
 

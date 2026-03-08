@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.security.core.Authentication;
@@ -36,12 +35,21 @@ public class CarController {
             return ResponseEntity.ok(carRepository.findAll());
         } else if (user.getRole() == User.Role.CLIENT) {
             return ResponseEntity.ok(carRepository.findByClient(user));
-        } else if (user.getRole() == User.Role.AGENT && clientId != null) {
-            Optional<User> client = userService.findById(clientId);
-            if (client.isPresent() && client.get().getCreatedBy() == user.getId()) {
-                return ResponseEntity.ok(carRepository.findByClient(client.get()));
+        } else if (user.getRole() == User.Role.AGENT) {
+            if (clientId != null) {
+                Optional<User> client = userService.findById(clientId);
+                if (client.isPresent() && java.util.Objects.equals(client.get().getCreatedBy(), user.getId())) {
+                    return ResponseEntity.ok(carRepository.findByClient(client.get()));
+                } else {
+                    return ResponseEntity.status(403).build();
+                }
             } else {
-                return ResponseEntity.status(403).build();
+                // Agent without clientId: return all cars for their assigned clients (e.g. dashboard)
+                List<User> agentClients = userService.findClientsByAgent(user.getId());
+                List<Car> cars = agentClients.stream()
+                    .flatMap(c -> carRepository.findByClient(c).stream())
+                    .toList();
+                return ResponseEntity.ok(cars);
             }
         }
         return ResponseEntity.status(403).build();
@@ -50,19 +58,15 @@ public class CarController {
     // Add car
     @PostMapping
     @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<?> addCar(@RequestBody Car car, Principal principal) {
-        Optional<User> userOpt = userService.findByEmail(principal.getName());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).body("User not found or not authenticated");
-        }
-        User user = userOpt.get();
+    public ResponseEntity<?> addCar(@RequestBody Car car, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
         
         if (user.getRole() == User.Role.CLIENT) {
             car.setClient(user);
         } else if (user.getRole() == User.Role.AGENT) {
             if (car.getClient() != null) {
                 Optional<User> client = userService.findById(car.getClient().getId());
-                if (client.isPresent() && client.get().getCreatedBy().equals(user.getId())) {
+                if (client.isPresent() && java.util.Objects.equals(client.get().getCreatedBy(), user.getId())) {
                     car.setClient(client.get());
                 } else {
                     return ResponseEntity.status(403).body("Not allowed to add car for this client");
@@ -71,44 +75,40 @@ public class CarController {
                 return ResponseEntity.status(400).body("Client is required for AGENT");
             }
         } else if (user.getRole() == User.Role.SUPER_ADMIN) {
-            // SUPER_ADMIN can create cars without specifying a client
-            // The car will be created but won't have insurance terms until a client is assigned
             if (car.getClient() == null) {
-                // Create car without client for now
-                car.setClient(null);
+                return ResponseEntity.status(400).body("Client is required");
             }
+            Optional<User> client = userService.findById(car.getClient().getId());
+            if (client.isEmpty() || client.get().getRole() != User.Role.CLIENT) {
+                return ResponseEntity.status(400).body("Client not found or not a client user");
+            }
+            car.setClient(client.get());
         } else {
             return ResponseEntity.status(403).build();
         }
         
         Car saved = carRepository.save(car);
-        
-        // Create default insurance term for the car only if it has a client
-        if (saved.getClient() != null) {
-            insuranceTermService.createDefaultInsuranceTerm(saved);
-        }
-        
+        insuranceTermService.createDefaultInsuranceTerm(saved);
         return ResponseEntity.ok(saved);
     }
 
     // Update car
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CLIENT', 'AGENT')")
-    public ResponseEntity<?> updateCar(@PathVariable("id") Long id, @RequestBody Car car, Principal principal) {
-        Optional<User> userOpt = userService.findByEmail(principal.getName());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).body("User not found or not authenticated");
-        }
-        User user = userOpt.get();
+    @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'SUPER_ADMIN')")
+    public ResponseEntity<?> updateCar(@PathVariable("id") Long id, @RequestBody Car car, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
         Optional<Car> existingOpt = carRepository.findById(id);
         if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
         Car existing = existingOpt.get();
-        if (user.getRole() == User.Role.CLIENT && !existing.getClient().getId().equals(user.getId())) {
+        if (user.getRole() == User.Role.SUPER_ADMIN) {
+            // SUPER_ADMIN can update any car
+        } else if (existing.getClient() == null) {
+            return ResponseEntity.status(403).build(); // only SUPER_ADMIN can update cars with no client
+        } else if (user.getRole() == User.Role.CLIENT && !existing.getClient().getId().equals(user.getId())) {
             return ResponseEntity.status(403).build();
-        }
-        if (user.getRole() == User.Role.AGENT) {
+        } else if (user.getRole() == User.Role.AGENT) {
             Optional<User> client = userService.findById(existing.getClient().getId());
-            if (client.isEmpty() || client.get().getCreatedBy() != user.getId()) {
+            if (client.isEmpty() || !java.util.Objects.equals(client.get().getCreatedBy(), user.getId())) {
                 return ResponseEntity.status(403).build();
             }
         }
@@ -125,22 +125,21 @@ public class CarController {
 
     // Delete car
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CLIENT', 'AGENT')")
-    public ResponseEntity<?> deleteCar(@PathVariable("id") Long id, Principal principal) {
-        Optional<User> userOpt = userService.findByEmail(principal.getName());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).body("User not found or not authenticated");
-        }
-        User user = userOpt.get();
+    @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'SUPER_ADMIN')")
+    public ResponseEntity<?> deleteCar(@PathVariable("id") Long id, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
         Optional<Car> carOpt = carRepository.findById(id);
         if (carOpt.isEmpty()) return ResponseEntity.notFound().build();
         Car car = carOpt.get();
-        if (user.getRole() == User.Role.CLIENT && !car.getClient().getId().equals(user.getId())) {
+        if (user.getRole() == User.Role.SUPER_ADMIN) {
+            // SUPER_ADMIN can delete any car
+        } else if (car.getClient() == null) {
+            return ResponseEntity.status(403).build(); // only SUPER_ADMIN can delete cars with no client
+        } else if (user.getRole() == User.Role.CLIENT && !car.getClient().getId().equals(user.getId())) {
             return ResponseEntity.status(403).build();
-        }
-        if (user.getRole() == User.Role.AGENT) {
+        } else if (user.getRole() == User.Role.AGENT) {
             Optional<User> client = userService.findById(car.getClient().getId());
-            if (client.isEmpty() || client.get().getCreatedBy() != user.getId()) {
+            if (client.isEmpty() || !java.util.Objects.equals(client.get().getCreatedBy(), user.getId())) {
                 return ResponseEntity.status(403).build();
             }
         }

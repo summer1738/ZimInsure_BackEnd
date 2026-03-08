@@ -40,13 +40,17 @@ public class QuotationController {
         } else if (user.getRole() == User.Role.AGENT) {
             if (clientId != null) {
                 Optional<User> client = userService.findById(clientId);
-                if (client.isPresent() && client.get().getCreatedBy() == user.getId()) {
+                if (client.isPresent() && java.util.Objects.equals(client.get().getCreatedBy(), user.getId())) {
                     list = quotationRepository.findByClient(client.get());
                 } else {
                     return ResponseEntity.status(403).build();
                 }
             } else {
-                list = quotationRepository.findByAgent(user);
+                // Agent without clientId: return all quotations for their assigned clients (e.g. dashboard)
+                List<User> agentClients = userService.findClientsByAgent(user.getId());
+                list = agentClients.stream()
+                    .flatMap(c -> quotationRepository.findByClient(c).stream())
+                    .toList();
             }
         } else if (user.getRole() == User.Role.SUPER_ADMIN) {
             if (clientId != null) {
@@ -108,7 +112,7 @@ public class QuotationController {
                 return ResponseEntity.badRequest().body("Client is required");
             }
             Optional<User> client = userService.findById(dto.getClientId());
-            if (client.isEmpty() || client.get().getCreatedBy() != user.getId()) {
+            if (client.isEmpty() || !java.util.Objects.equals(client.get().getCreatedBy(), user.getId())) {
                 return ResponseEntity.status(403).body("Not allowed to create quotation for this client");
             }
             quotation.setClient(client.get());
@@ -139,7 +143,9 @@ public class QuotationController {
         Quotation existing = existingOpt.get();
         User user = (User) authentication.getPrincipal();
         if (user.getRole() == User.Role.AGENT) {
-            if (existing.getAgent() == null || !existing.getAgent().getId().equals(user.getId())) {
+            boolean isQuotationAgent = existing.getAgent() != null && existing.getAgent().getId().equals(user.getId());
+            boolean isClientAssignedAgent = existing.getClient() != null && user.getId().equals(existing.getClient().getCreatedBy());
+            if (!isQuotationAgent && !isClientAssignedAgent) {
                 return ResponseEntity.status(403).build();
             }
         }
@@ -161,7 +167,9 @@ public class QuotationController {
         Quotation quotation = quotationOpt.get();
         User user = (User) authentication.getPrincipal();
         if (user.getRole() == User.Role.AGENT) {
-            if (quotation.getAgent() == null || !quotation.getAgent().getId().equals(user.getId())) {
+            boolean isQuotationAgent = quotation.getAgent() != null && quotation.getAgent().getId().equals(user.getId());
+            boolean isClientAssignedAgent = quotation.getClient() != null && user.getId().equals(quotation.getClient().getCreatedBy());
+            if (!isQuotationAgent && !isClientAssignedAgent) {
                 return ResponseEntity.status(403).build();
             }
         }

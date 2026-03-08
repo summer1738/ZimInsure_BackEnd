@@ -35,12 +35,20 @@ public class PolicyController {
         List<Policy> policies;
         if (user.getRole() == User.Role.CLIENT) {
             policies = policyRepository.findByClient(user);
-        } else if (user.getRole() == User.Role.AGENT && clientId != null) {
-            Optional<User> client = userService.findById(clientId);
-            if (client.isPresent() && client.get().getCreatedBy() == user.getId()) {
-                policies = policyRepository.findByClient(client.get());
+        } else if (user.getRole() == User.Role.AGENT) {
+            if (clientId != null) {
+                Optional<User> client = userService.findById(clientId);
+                if (client.isPresent() && java.util.Objects.equals(client.get().getCreatedBy(), user.getId())) {
+                    policies = policyRepository.findByClient(client.get());
+                } else {
+                    return ResponseEntity.status(403).build();
+                }
             } else {
-                return ResponseEntity.status(403).build();
+                // Agent without clientId: return all policies for their assigned clients (e.g. dashboard)
+                List<User> agentClients = userService.findClientsByAgent(user.getId());
+                policies = agentClients.stream()
+                    .flatMap(c -> policyRepository.findByClient(c).stream())
+                    .toList();
             }
         } else if (user.getRole() == User.Role.SUPER_ADMIN) {
             if (clientId != null) {
@@ -91,6 +99,10 @@ public class PolicyController {
         Optional<Car> car = carRepository.findById(dto.getCarId());
         Optional<User> client = userService.findById(dto.getClientId());
         if (car.isEmpty() || client.isEmpty()) return ResponseEntity.badRequest().body("Car or client not found");
+        User user = (User) authentication.getPrincipal();
+        if (user.getRole() == User.Role.AGENT && !user.getId().equals(client.get().getCreatedBy())) {
+            return ResponseEntity.status(403).body("Not allowed to create policy for this client");
+        }
         Policy policy = new Policy();
         policy.setPolicyNumber(dto.getPolicyNumber());
         policy.setType(dto.getType());
@@ -111,6 +123,12 @@ public class PolicyController {
         Optional<Policy> existingOpt = policyRepository.findById(id);
         if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
         Policy existing = existingOpt.get();
+        User user = (User) authentication.getPrincipal();
+        if (user.getRole() == User.Role.AGENT) {
+            if (existing.getClient() == null || !user.getId().equals(existing.getClient().getCreatedBy())) {
+                return ResponseEntity.status(403).build();
+            }
+        }
         if (dto.getPolicyNumber() != null) existing.setPolicyNumber(dto.getPolicyNumber());
         if (dto.getType() != null) existing.setType(dto.getType());
         if (dto.getStatus() != null) existing.setStatus(dto.getStatus());
@@ -124,8 +142,15 @@ public class PolicyController {
     // Delete policy
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<?> deletePolicy(@PathVariable("id") Long id) {
+    public ResponseEntity<?> deletePolicy(@PathVariable("id") Long id, Authentication authentication) {
         if (!policyRepository.existsById(id)) return ResponseEntity.notFound().build();
+        User user = (User) authentication.getPrincipal();
+        if (user.getRole() == User.Role.AGENT) {
+            Optional<Policy> policyOpt = policyRepository.findById(id);
+            if (policyOpt.isEmpty() || policyOpt.get().getClient() == null || !user.getId().equals(policyOpt.get().getClient().getCreatedBy())) {
+                return ResponseEntity.status(403).build();
+            }
+        }
         policyRepository.deleteById(id);
         return ResponseEntity.ok("Policy deleted");
     }

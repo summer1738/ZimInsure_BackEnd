@@ -12,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
+import org.springframework.security.core.Authentication;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -40,12 +40,8 @@ public class InsuranceTermController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<List<InsuranceTerm>> getTerms(@RequestParam(required = false) Long carId, Principal principal) {
-        Optional<User> userOpt = userService.findByEmail(principal.getName());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).build();
-        }
-        User user = userOpt.get();
+    public ResponseEntity<List<InsuranceTerm>> getTerms(@RequestParam(required = false) Long carId, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
         
         if (carId != null) {
             Optional<Car> car = carRepository.findById(carId);
@@ -59,7 +55,7 @@ public class InsuranceTermController {
                     return ResponseEntity.status(403).build();
                 }
             } else if (user.getRole() == User.Role.AGENT) {
-                if (!car.get().getClient().getCreatedBy().equals(user.getId())) {
+                if (!java.util.Objects.equals(car.get().getClient().getCreatedBy(), user.getId())) {
                     return ResponseEntity.status(403).build();
                 }
             }
@@ -77,7 +73,7 @@ public class InsuranceTermController {
             } else if (user.getRole() == User.Role.AGENT) {
                 // Return terms for agent's clients' cars
                 List<Car> agentCars = carRepository.findAll().stream()
-                    .filter(car -> car.getClient().getCreatedBy().equals(user.getId()))
+                    .filter(car -> java.util.Objects.equals(car.getClient().getCreatedBy(), user.getId()))
                     .toList();
                 List<InsuranceTerm> allTerms = agentCars.stream()
                     .flatMap(car -> insuranceTermService.findByCar(car).stream())
@@ -92,12 +88,8 @@ public class InsuranceTermController {
 
     @GetMapping("/scan-expiring")
     @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<List<InsuranceTerm>> scanExpiring(Principal principal) {
-        Optional<User> userOpt = userService.findByEmail(principal.getName());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).build();
-        }
-        User user = userOpt.get();
+    public ResponseEntity<List<InsuranceTerm>> scanExpiring(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
         LocalDate today = LocalDate.now();
         LocalDate windowEnd = today.plusDays(30);
         List<InsuranceTerm> allTerms = insuranceTermRepository.findAll();
@@ -121,18 +113,12 @@ public class InsuranceTermController {
 
     @GetMapping("/is-insured")
     @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<Boolean> isInsured(@RequestParam("carId") Long carId, Principal principal) {
+    public ResponseEntity<Boolean> isInsured(@RequestParam("carId") Long carId, Authentication authentication) {
         Optional<Car> car = carRepository.findById(carId);
         if (car.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        
-        Optional<User> userOpt = userService.findByEmail(principal.getName());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).build();
-        }
-        
-        User user = userOpt.get();
+        User user = (User) authentication.getPrincipal();
         
         // Check authorization based on user role
         if (user.getRole() == User.Role.CLIENT) {
@@ -142,7 +128,7 @@ public class InsuranceTermController {
             }
         } else if (user.getRole() == User.Role.AGENT) {
             // AGENT can only check cars of their clients
-            if (!car.get().getClient().getCreatedBy().equals(user.getId())) {
+            if (!java.util.Objects.equals(car.get().getClient().getCreatedBy(), user.getId())) {
                 return ResponseEntity.status(403).build();
             }
         }
@@ -154,18 +140,12 @@ public class InsuranceTermController {
 
     @GetMapping("/current")
     @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<InsuranceTerm> getCurrentTerm(@RequestParam("carId") Long carId, Principal principal) {
+    public ResponseEntity<InsuranceTerm> getCurrentTerm(@RequestParam("carId") Long carId, Authentication authentication) {
         Optional<Car> car = carRepository.findById(carId);
         if (car.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        
-        Optional<User> userOpt = userService.findByEmail(principal.getName());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).build();
-        }
-        
-        User user = userOpt.get();
+        User user = (User) authentication.getPrincipal();
         
         // Check authorization based on user role
         if (user.getRole() == User.Role.CLIENT) {
@@ -175,7 +155,7 @@ public class InsuranceTermController {
             }
         } else if (user.getRole() == User.Role.AGENT) {
             // AGENT can only check cars of their clients
-            if (!car.get().getClient().getCreatedBy().equals(user.getId())) {
+            if (!java.util.Objects.equals(car.get().getClient().getCreatedBy(), user.getId())) {
                 return ResponseEntity.status(403).build();
             }
         }
@@ -187,20 +167,16 @@ public class InsuranceTermController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<?> addTerm(@RequestBody InsuranceTerm term, Principal principal) {
+    public ResponseEntity<?> addTerm(@RequestBody InsuranceTerm term, Authentication authentication) {
         if (term.getCar() == null || term.getCar().getId() == null) {
             return ResponseEntity.badRequest().body("Car is required");
         }
         Optional<Car> car = carRepository.findById(term.getCar().getId());
         if (car.isEmpty()) return ResponseEntity.badRequest().body("Car not found");
-        Optional<User> userOpt = userService.findByEmail(principal.getName());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).body("User not found or not authenticated");
-        }
-        User user = userOpt.get();
+        User user = (User) authentication.getPrincipal();
         if (user.getRole() == User.Role.AGENT) {
             User client = car.get().getClient();
-            if (client.getCreatedBy() != user.getId()) {
+            if (client == null || !java.util.Objects.equals(client.getCreatedBy(), user.getId())) {
                 return ResponseEntity.status(403).body("Not allowed to insure car for this client");
             }
         }
@@ -212,18 +188,14 @@ public class InsuranceTermController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<?> updateTerm(@PathVariable("id") Long id, @RequestBody InsuranceTerm term, Principal principal) {
+    public ResponseEntity<?> updateTerm(@PathVariable("id") Long id, @RequestBody InsuranceTerm term, Authentication authentication) {
         Optional<InsuranceTerm> existingOpt = insuranceTermRepository.findById(id);
         if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
         InsuranceTerm existing = existingOpt.get();
-        Optional<User> userOpt = userService.findByEmail(principal.getName());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).body("User not found or not authenticated");
-        }
-        User user = userOpt.get();
+        User user = (User) authentication.getPrincipal();
         if (user.getRole() == User.Role.AGENT) {
             User client = existing.getCar().getClient();
-            if (client.getCreatedBy() != user.getId()) {
+            if (client == null || !java.util.Objects.equals(client.getCreatedBy(), user.getId())) {
                 return ResponseEntity.status(403).build();
             }
         }
@@ -237,18 +209,14 @@ public class InsuranceTermController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<?> deleteTerm(@PathVariable("id") Long id, Principal principal) {
+    public ResponseEntity<?> deleteTerm(@PathVariable("id") Long id, Authentication authentication) {
         Optional<InsuranceTerm> termOpt = insuranceTermRepository.findById(id);
         if (termOpt.isEmpty()) return ResponseEntity.notFound().build();
         InsuranceTerm term = termOpt.get();
-        Optional<User> userOpt = userService.findByEmail(principal.getName());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).body("User not found or not authenticated");
-        }
-        User user = userOpt.get();
+        User user = (User) authentication.getPrincipal();
         if (user.getRole() == User.Role.AGENT) {
             User client = term.getCar().getClient();
-            if (client.getCreatedBy() != user.getId()) {
+            if (client == null || !java.util.Objects.equals(client.getCreatedBy(), user.getId())) {
                 return ResponseEntity.status(403).build();
             }
         }

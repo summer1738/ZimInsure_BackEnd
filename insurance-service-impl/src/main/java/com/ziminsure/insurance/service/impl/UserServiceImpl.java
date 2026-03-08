@@ -82,6 +82,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<User> findAssignableUsers() {
+        return userRepository.findAll().stream()
+                .filter(u -> u.getRole() == User.Role.AGENT || u.getRole() == User.Role.SUPER_ADMIN)
+                .toList();
+    }
+
+    @Override
     public User updateUser(Long id, User updatedUser, User.Role requiredRole) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));

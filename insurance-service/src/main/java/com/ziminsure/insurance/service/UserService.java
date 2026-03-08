@@ -14,6 +14,9 @@ public interface UserService {
 
     List<User> findByRole(User.Role role);
 
+    /** Users who can be assigned clients (AGENT or SUPER_ADMIN). For SUPER_ADMIN assignment UI. */
+    List<User> findAssignableUsers();
+
     User updateUser(Long id, User updatedUser, User.Role requiredRole);
 
     void deleteUser(Long id, User.Role requiredRole);

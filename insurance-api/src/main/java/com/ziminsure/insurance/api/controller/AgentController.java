@@ -32,6 +32,13 @@ public class AgentController {
         return ResponseEntity.ok(agents);
     }
 
+    /** List users who can be assigned clients (AGENT + SUPER_ADMIN). SUPER_ADMIN only. */
+    @GetMapping("/assignables")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<List<User>> listAssignables() {
+        return ResponseEntity.ok(userService.findAssignableUsers());
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAgent(@PathVariable("id") Long id, @RequestBody User agent) {
         User updated = userService.updateUser(id, agent, User.Role.AGENT);
