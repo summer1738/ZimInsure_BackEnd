@@ -17,9 +17,18 @@ public class QuotationResponse {
     private Long carId;
     private String carRegNumber;
     private Long agentId;
+    /** Which insurance company this quotation is for. */
+    private String insuranceCompany;
+    /** Optional ID of the policy this quotation is based on. */
+    private Long policyId;
+    /** Latest amount proposed by the client when negotiating (may be null). */
+    private Double clientProposedAmount;
+    /** Latest comment from the client regarding this quotation. */
+    private String clientComment;
 
     public QuotationResponse(Long id, String quotationNumber, String policyType, String status, Double amount,
-                             LocalDate createdDate, Long clientId, String clientName, Long carId, String carRegNumber, Long agentId) {
+                             LocalDate createdDate, Long clientId, String clientName, Long carId, String carRegNumber,
+                             Long agentId, String insuranceCompany, Long policyId, Double clientProposedAmount, String clientComment) {
         this.id = id;
         this.quotationNumber = quotationNumber;
         this.policyType = policyType;
@@ -31,6 +40,10 @@ public class QuotationResponse {
         this.carId = carId;
         this.carRegNumber = carRegNumber;
         this.agentId = agentId;
+        this.insuranceCompany = insuranceCompany;
+        this.policyId = policyId;
+        this.clientProposedAmount = clientProposedAmount;
+        this.clientComment = clientComment;
     }
 
     public Long getId() { return id; }
@@ -55,4 +68,36 @@ public class QuotationResponse {
     public void setCarRegNumber(String carRegNumber) { this.carRegNumber = carRegNumber; }
     public Long getAgentId() { return agentId; }
     public void setAgentId(Long agentId) { this.agentId = agentId; }
+
+    public String getInsuranceCompany() {
+        return insuranceCompany;
+    }
+
+    public void setInsuranceCompany(String insuranceCompany) {
+        this.insuranceCompany = insuranceCompany;
+    }
+
+    public Long getPolicyId() {
+        return policyId;
+    }
+
+    public void setPolicyId(Long policyId) {
+        this.policyId = policyId;
+    }
+
+    public Double getClientProposedAmount() {
+        return clientProposedAmount;
+    }
+
+    public void setClientProposedAmount(Double clientProposedAmount) {
+        this.clientProposedAmount = clientProposedAmount;
+    }
+
+    public String getClientComment() {
+        return clientComment;
+    }
+
+    public void setClientComment(String clientComment) {
+        this.clientComment = clientComment;
+    }
 }

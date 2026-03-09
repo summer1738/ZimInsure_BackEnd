@@ -13,8 +13,10 @@ public class PolicyResponse {
     private Long carId;
     private Long clientId;
     private String clientName;
+    /** Name of the insurance company for this policy. */
+    private String insuranceCompany;
 
-    public PolicyResponse(Long id, String policyNumber, String type, String status, LocalDate startDate, LocalDate endDate, Double premium, Long carId, Long clientId, String clientName) {
+    public PolicyResponse(Long id, String policyNumber, String type, String status, LocalDate startDate, LocalDate endDate, Double premium, Long carId, Long clientId, String clientName, String insuranceCompany) {
         this.id = id;
         this.policyNumber = policyNumber;
         this.type = type;
@@ -25,6 +27,7 @@ public class PolicyResponse {
         this.carId = carId;
         this.clientId = clientId;
         this.clientName = clientName;
+        this.insuranceCompany = insuranceCompany;
     }
 
     // Getters and setters
@@ -48,4 +51,12 @@ public class PolicyResponse {
     public void setClientId(Long clientId) { this.clientId = clientId; }
     public String getClientName() { return clientName; }
     public void setClientName(String clientName) { this.clientName = clientName; }
+
+    public String getInsuranceCompany() {
+        return insuranceCompany;
+    }
+
+    public void setInsuranceCompany(String insuranceCompany) {
+        this.insuranceCompany = insuranceCompany;
+    }
 } 

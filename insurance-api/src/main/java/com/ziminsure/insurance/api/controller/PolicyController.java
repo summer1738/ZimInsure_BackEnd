@@ -8,6 +8,7 @@ import com.ziminsure.insurance.domain.PolicyResponse;
 import com.ziminsure.insurance.repository.PolicyRepository;
 import com.ziminsure.insurance.repository.CarRepository;
 import com.ziminsure.insurance.service.UserService;
+import com.ziminsure.insurance.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,6 +27,8 @@ public class PolicyController {
     private CarRepository carRepository;
     @Autowired
     private UserService userService;
+    @Autowired
+    private NotificationService notificationService;
 
     // List policies
     @GetMapping
@@ -81,7 +84,8 @@ public class PolicyController {
             p.getPremium(),
             p.getCar() != null ? p.getCar().getId() : null,
             p.getClient() != null ? p.getClient().getId() : null,
-            p.getClient() != null ? p.getClient().getFullName() : null
+            p.getClient() != null ? p.getClient().getFullName() : null,
+            p.getInsuranceCompany()
         )).toList();
         return ResponseEntity.ok(response);
     }
@@ -110,9 +114,34 @@ public class PolicyController {
         policy.setStartDate(dto.getStartDate());
         policy.setEndDate(dto.getEndDate());
         policy.setPremium(dto.getPremium());
+        policy.setInsuranceCompany(dto.getInsuranceCompany());
         policy.setCar(car.get());
         policy.setClient(client.get());
         Policy saved = policyRepository.save(policy);
+
+        // Notify client about new policy
+        User clientUser = saved.getClient();
+        if (clientUser != null) {
+            String reg = saved.getCar() != null && saved.getCar().getRegNumber() != null
+                    ? saved.getCar().getRegNumber()
+                    : "your car";
+            String msg = String.format(
+                    "A new policy %s has been created for %s with %s. Premium: %.2f.",
+                    saved.getPolicyNumber(),
+                    reg,
+                    saved.getInsuranceCompany() != null ? saved.getInsuranceCompany() : "your insurer",
+                    saved.getPremium() != null ? saved.getPremium() : 0.0
+            );
+            notificationService.addNotification(
+                    msg,
+                    "success",
+                    "CLIENT",
+                    null,
+                    clientUser.getId(),
+                    saved.getCar() != null ? saved.getCar().getId() : null
+            );
+        }
+
         return ResponseEntity.ok(saved);
     }
 
@@ -135,7 +164,30 @@ public class PolicyController {
         if (dto.getStartDate() != null) existing.setStartDate(dto.getStartDate());
         if (dto.getEndDate() != null) existing.setEndDate(dto.getEndDate());
         if (dto.getPremium() != null) existing.setPremium(dto.getPremium());
+        if (dto.getInsuranceCompany() != null) existing.setInsuranceCompany(dto.getInsuranceCompany());
         Policy saved = policyRepository.save(existing);
+
+        // Notify client about policy update
+        User clientUser = saved.getClient();
+        if (clientUser != null) {
+            String reg = saved.getCar() != null && saved.getCar().getRegNumber() != null
+                    ? saved.getCar().getRegNumber()
+                    : "your car";
+            String msg = String.format(
+                    "Your policy %s for %s has been updated. Please review the details.",
+                    saved.getPolicyNumber(),
+                    reg
+            );
+            notificationService.addNotification(
+                    msg,
+                    "info",
+                    "CLIENT",
+                    null,
+                    clientUser.getId(),
+                    saved.getCar() != null ? saved.getCar().getId() : null
+            );
+        }
+
         return ResponseEntity.ok(saved);
     }
 

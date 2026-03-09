@@ -7,6 +7,7 @@ import com.ziminsure.insurance.repository.InsuranceTermRepository;
 import com.ziminsure.insurance.repository.CarRepository;
 import com.ziminsure.insurance.service.UserService;
 import com.ziminsure.insurance.service.InsuranceTermService;
+import com.ziminsure.insurance.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,21 +27,25 @@ public class InsuranceTermController {
     private final CarRepository carRepository;
     private final UserService userService;
     private final InsuranceTermService insuranceTermService;
+    private final NotificationService notificationService;
 
     @Autowired
-    public InsuranceTermController(InsuranceTermRepository insuranceTermRepository, 
-                                 CarRepository carRepository, 
+    public InsuranceTermController(InsuranceTermRepository insuranceTermRepository,
+                                 CarRepository carRepository,
                                  UserService userService,
-                                 InsuranceTermService insuranceTermService) {
+                                 InsuranceTermService insuranceTermService,
+                                 NotificationService notificationService) {
         this.insuranceTermRepository = insuranceTermRepository;
         this.carRepository = carRepository;
         this.userService = userService;
         this.insuranceTermService = insuranceTermService;
+        this.notificationService = notificationService;
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('CLIENT', 'AGENT', 'SUPER_ADMIN')")
-    public ResponseEntity<List<InsuranceTerm>> getTerms(@RequestParam(required = false) Long carId, Authentication authentication) {
+    public ResponseEntity<List<InsuranceTerm>> getTerms(@RequestParam(value = "carId", required = false) Long carId,
+                                                        Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         
         if (carId != null) {
@@ -180,9 +185,52 @@ public class InsuranceTermController {
                 return ResponseEntity.status(403).body("Not allowed to insure car for this client");
             }
         }
+
+        // Prevent overlapping insurance terms for the same car
+        if (term.getStartDate() != null && term.getEndDate() != null) {
+            List<InsuranceTerm> existingTerms = insuranceTermRepository.findByCar(car.get());
+            for (InsuranceTerm existing : existingTerms) {
+                if (existing.getStartDate() == null || existing.getEndDate() == null) {
+                    continue;
+                }
+                boolean overlaps =
+                        !term.getEndDate().isBefore(existing.getStartDate()) &&
+                        !term.getStartDate().isAfter(existing.getEndDate());
+                if (overlaps) {
+                    return ResponseEntity.badRequest()
+                            .body("An insurance term already exists for this car that overlaps the selected date range.");
+                }
+            }
+        }
+
         // SUPER_ADMIN can add for any car
         term.setCar(car.get());
+        if (term.getTermCount() <= 0) {
+            term.setTermCount(1);
+        }
         InsuranceTerm saved = insuranceTermRepository.save(term);
+
+        // Create notification for client about new/updated insurance
+        User clientUser = saved.getCar().getClient();
+        if (clientUser != null) {
+            String reg = saved.getCar().getRegNumber() != null ? saved.getCar().getRegNumber() : "your car";
+            String msg = String.format(
+                    "Your car %s has been insured for %d × 4 months (%s to %s).",
+                    reg,
+                    saved.getTermCount(),
+                    saved.getStartDate(),
+                    saved.getEndDate()
+            );
+            notificationService.addNotification(
+                    msg,
+                    "success",
+                    "CLIENT",
+                    null,
+                    clientUser.getId(),
+                    saved.getCar().getId()
+            );
+        }
+
         return ResponseEntity.ok(saved);
     }
 

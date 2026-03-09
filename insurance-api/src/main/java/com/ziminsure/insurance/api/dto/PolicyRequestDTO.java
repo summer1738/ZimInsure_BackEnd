@@ -14,6 +14,8 @@ public class PolicyRequestDTO {
     private Double premium;
     private Long carId;
     private Long clientId;
+    /** Name of the insurance company for this policy. */
+    private String insuranceCompany;
 
     public String getPolicyNumber() { return policyNumber; }
     public void setPolicyNumber(String policyNumber) { this.policyNumber = policyNumber; }
@@ -31,4 +33,12 @@ public class PolicyRequestDTO {
     public void setCarId(Long carId) { this.carId = carId; }
     public Long getClientId() { return clientId; }
     public void setClientId(Long clientId) { this.clientId = clientId; }
+
+    public String getInsuranceCompany() {
+        return insuranceCompany;
+    }
+
+    public void setInsuranceCompany(String insuranceCompany) {
+        this.insuranceCompany = insuranceCompany;
+    }
 }

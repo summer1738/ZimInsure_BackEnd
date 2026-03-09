@@ -6,6 +6,7 @@ import com.ziminsure.insurance.domain.Car;
 import com.ziminsure.insurance.domain.User;
 import com.ziminsure.insurance.repository.CarRepository;
 import com.ziminsure.insurance.service.UserService;
+import com.ziminsure.insurance.service.NotificationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +20,12 @@ import org.springframework.security.core.Authentication;
 public class ClientController {
     private final UserService userService;
     private final CarRepository carRepository;
+    private final NotificationService notificationService;
 
-    public ClientController(UserService userService, CarRepository carRepository) {
+    public ClientController(UserService userService, CarRepository carRepository, NotificationService notificationService) {
         this.userService = userService;
         this.carRepository = carRepository;
+        this.notificationService = notificationService;
     }
 
     // Agent endpoints
@@ -163,8 +166,52 @@ public class ClientController {
         if (assignable.isEmpty() || (assignable.get().getRole() != User.Role.AGENT && assignable.get().getRole() != User.Role.SUPER_ADMIN)) {
             return ResponseEntity.badRequest().body(java.util.Map.of("message", "Invalid agent id"));
         }
+        Long oldAgentId = existingClient.getCreatedBy();
         existingClient.setCreatedBy(assignable.get().getId());
         userService.save(existingClient);
+
+        // Notifications: new agent, old agent, and client
+        User client = existingClient;
+        User newAgent = assignable.get();
+
+        // Notify new agent
+        String clientName = client.getFullName() != null ? client.getFullName() : "a client";
+        String newAgentMsg = String.format("Client %s has been assigned to you.", clientName);
+        notificationService.addNotification(
+                newAgentMsg,
+                "info",
+                "AGENT",
+                newAgent.getId(),
+                client.getId(),
+                null
+        );
+
+        // Notify old agent, if changed
+        if (oldAgentId != null && !oldAgentId.equals(newAgent.getId())) {
+            userService.findById(oldAgentId).ifPresent(oldAgent -> {
+                String oldAgentMsg = String.format("Client %s is no longer assigned to you.", clientName);
+                notificationService.addNotification(
+                        oldAgentMsg,
+                        "info",
+                        "AGENT",
+                        oldAgent.getId(),
+                        client.getId(),
+                        null
+                );
+            });
+        }
+
+        // Notify client
+        String clientMsg = String.format("You have been assigned to agent %s.", newAgent.getFullName());
+        notificationService.addNotification(
+                clientMsg,
+                "info",
+                "CLIENT",
+                null,
+                client.getId(),
+                null
+        );
+
         return ResponseEntity.ok(userService.findById(id).orElse(existingClient));
     }
 

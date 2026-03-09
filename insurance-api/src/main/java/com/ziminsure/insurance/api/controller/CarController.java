@@ -5,6 +5,7 @@ import com.ziminsure.insurance.domain.User;
 import com.ziminsure.insurance.repository.CarRepository;
 import com.ziminsure.insurance.service.UserService;
 import com.ziminsure.insurance.service.InsuranceTermService;
+import com.ziminsure.insurance.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +24,8 @@ public class CarController {
     private UserService userService;
     @Autowired
     private InsuranceTermService insuranceTermService;
+    @Autowired
+    private NotificationService notificationService;
 
     // List cars for current client
     @GetMapping
@@ -89,6 +92,26 @@ public class CarController {
         
         Car saved = carRepository.save(car);
         insuranceTermService.createDefaultInsuranceTerm(saved);
+
+        // If client added a car, notify their assigned agent (if any)
+        if (user.getRole() == User.Role.CLIENT && user.getCreatedBy() != null) {
+            Long agentId = user.getCreatedBy();
+            String reg = saved.getRegNumber() != null ? saved.getRegNumber() : "a new car";
+            String msg = String.format(
+                    "Client %s added car %s. Consider creating a quotation or policy.",
+                    user.getFullName(),
+                    reg
+            );
+            notificationService.addNotification(
+                    msg,
+                    "info",
+                    "AGENT",
+                    agentId,
+                    user.getId(),
+                    saved.getId()
+            );
+        }
+
         return ResponseEntity.ok(saved);
     }
 

@@ -23,6 +23,14 @@ public class Quotation {
     private String status;
     private Double amount;
     private LocalDate createdDate;
+    /** Name of the insurance company for this quotation (copied from related policy). */
+    private String insuranceCompany;
+    /** Optional: ID of the policy this quotation is based on. */
+    private Long policyId;
+    /** When client negotiates, they can propose a different amount. */
+    private Double clientProposedAmount;
+    /** Free-text comment from client when negotiating or responding. */
+    private String clientComment;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id")
@@ -63,4 +71,36 @@ public class Quotation {
 
     public Car getCar() { return car; }
     public void setCar(Car car) { this.car = car; }
+
+    public String getInsuranceCompany() {
+        return insuranceCompany;
+    }
+
+    public void setInsuranceCompany(String insuranceCompany) {
+        this.insuranceCompany = insuranceCompany;
+    }
+
+    public Long getPolicyId() {
+        return policyId;
+    }
+
+    public void setPolicyId(Long policyId) {
+        this.policyId = policyId;
+    }
+
+    public Double getClientProposedAmount() {
+        return clientProposedAmount;
+    }
+
+    public void setClientProposedAmount(Double clientProposedAmount) {
+        this.clientProposedAmount = clientProposedAmount;
+    }
+
+    public String getClientComment() {
+        return clientComment;
+    }
+
+    public void setClientComment(String clientComment) {
+        this.clientComment = clientComment;
+    }
 }

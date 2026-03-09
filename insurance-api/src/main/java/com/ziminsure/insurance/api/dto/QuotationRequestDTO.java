@@ -13,6 +13,14 @@ public class QuotationRequestDTO {
     private LocalDate createdDate;
     private Long clientId;
     private Long carId;
+    /** Optional: ID of the policy this quotation is based on. */
+    private Long policyId;
+    /** Name of the insurance company for this quotation. */
+    private String insuranceCompany;
+    /** When client negotiates: proposed amount. */
+    private Double clientProposedAmount;
+    /** When client negotiates: comment or reason. */
+    private String clientComment;
 
     public String getQuotationNumber() { return quotationNumber; }
     public void setQuotationNumber(String quotationNumber) { this.quotationNumber = quotationNumber; }
@@ -28,4 +36,36 @@ public class QuotationRequestDTO {
     public void setClientId(Long clientId) { this.clientId = clientId; }
     public Long getCarId() { return carId; }
     public void setCarId(Long carId) { this.carId = carId; }
+
+    public Long getPolicyId() {
+        return policyId;
+    }
+
+    public void setPolicyId(Long policyId) {
+        this.policyId = policyId;
+    }
+
+    public String getInsuranceCompany() {
+        return insuranceCompany;
+    }
+
+    public void setInsuranceCompany(String insuranceCompany) {
+        this.insuranceCompany = insuranceCompany;
+    }
+
+    public Double getClientProposedAmount() {
+        return clientProposedAmount;
+    }
+
+    public void setClientProposedAmount(Double clientProposedAmount) {
+        this.clientProposedAmount = clientProposedAmount;
+    }
+
+    public String getClientComment() {
+        return clientComment;
+    }
+
+    public void setClientComment(String clientComment) {
+        this.clientComment = clientComment;
+    }
 }

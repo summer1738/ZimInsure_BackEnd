@@ -18,6 +18,8 @@ public class Policy {
     private LocalDate startDate;
     private LocalDate endDate;
     private Double premium;
+    /** Name of the insurance company for this policy (e.g. \"Old Mutual\"). */
+    private String insuranceCompany;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "car_id")
@@ -84,6 +86,14 @@ public class Policy {
 
     public void setPremium(Double premium) {
         this.premium = premium;
+    }
+
+    public String getInsuranceCompany() {
+        return insuranceCompany;
+    }
+
+    public void setInsuranceCompany(String insuranceCompany) {
+        this.insuranceCompany = insuranceCompany;
     }
 
     public Car getCar() {

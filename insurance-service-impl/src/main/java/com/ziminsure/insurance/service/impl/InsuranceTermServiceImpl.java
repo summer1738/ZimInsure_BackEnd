@@ -49,10 +49,10 @@ public class InsuranceTermServiceImpl implements InsuranceTermService {
     public Optional<InsuranceTerm> findCurrentByCar(Car car) {
         List<InsuranceTerm> terms = insuranceTermRepository.findByCar(car);
         LocalDate today = LocalDate.now();
-        
+        // Prefer the current term that extends furthest (latest endDate) so we show the intended term count
         return terms.stream()
-                .filter(term -> !term.getEndDate().isBefore(today))
-                .findFirst();
+                .filter(term -> term.getEndDate() != null && !term.getEndDate().isBefore(today))
+                .max((a, b) -> a.getEndDate().compareTo(b.getEndDate()));
     }
     
     @Override

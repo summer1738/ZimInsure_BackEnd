@@ -1,6 +1,7 @@
 package com.ziminsure.insurance.service.impl;
 
 import com.ziminsure.insurance.domain.Notification;
+import com.ziminsure.insurance.domain.User;
 import com.ziminsure.insurance.repository.NotificationRepository;
 import com.ziminsure.insurance.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,7 +73,31 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    public void markAllAsReadForUser(User user) {
+        if (user.getRole() == User.Role.CLIENT) {
+            notificationRepository.findByIsReadFalseAndClientId(user.getId())
+                    .forEach(n -> { n.setRead(true); notificationRepository.save(n); });
+        } else if (user.getRole() == User.Role.AGENT) {
+            notificationRepository.findByIsReadFalseAndAgentId(user.getId())
+                    .forEach(n -> { n.setRead(true); notificationRepository.save(n); });
+        } else {
+            notificationRepository.findByIsReadFalse()
+                    .forEach(n -> { n.setRead(true); notificationRepository.save(n); });
+        }
+    }
+
+    @Override
     public List<Notification> getAllNotifications() {
         return notificationRepository.findAll();
+    }
+
+    @Override
+    public Optional<Notification> findById(Long id) {
+        return notificationRepository.findById(id);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        notificationRepository.deleteById(id);
     }
 } 

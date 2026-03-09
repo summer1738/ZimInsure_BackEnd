@@ -8,10 +8,12 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(scanBasePackages = "com.ziminsure.insurance")
 @EnableJpaRepositories(basePackages = "com.ziminsure.insurance.repository")
 @EntityScan(basePackages = "com.ziminsure.insurance.domain")
+@EnableScheduling
 public class ZimInsureBackendApplication {
 
 	public static void main(String[] args) {
